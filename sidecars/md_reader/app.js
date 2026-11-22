@@ -7,6 +7,7 @@
   const PIN_KEY = 'pretty-md:pinned';
   const CHECK_KEY_PREFIX = 'pretty-md:checks:';
   const FOLD_KEY_PREFIX = 'pretty-md:folded:';
+  const SCROLL_KEY_PREFIX = 'pretty-md:scroll:';
 
   const VALID_THEMES = new Set(['ochre', 'gruvbox-dark', 'catppuccin-mocha']);
 
@@ -676,6 +677,21 @@
     }
   }
 
+  function saveScrollPos(docKey) {
+    if (!docKey || state.editing) return;
+    try {
+      localStorage.setItem(SCROLL_KEY_PREFIX + docKey, String(Math.round(window.scrollY)));
+    } catch {
+      // ignore storage quota errors
+    }
+  }
+
+  function loadScrollPos(docKey) {
+    if (!docKey) return 0;
+    const y = Number(localStorage.getItem(SCROLL_KEY_PREFIX + docKey));
+    return Number.isFinite(y) && y > 0 ? y : 0;
+  }
+
   function updateScrollUi() {
     if (state.editing || !docEl.innerHTML) {
       readProgress.style.width = '0%';
@@ -707,6 +723,7 @@
       state.scrollRaf = requestAnimationFrame(() => {
         state.scrollRaf = 0;
         updateScrollUi();
+        saveScrollPos(state.currentDocKey);
       });
     },
     { passive: true }
@@ -1648,6 +1665,7 @@
       savedChecks = {};
     }
 
+    const progressUpdaters = new Map();
     const allInputs = [...root.querySelectorAll('li > input[type="checkbox"]')];
     allInputs.forEach((cb, idx) => {
       const li = cb.parentElement;
@@ -1671,6 +1689,17 @@
         for (const n of toMove) labelSpan.appendChild(n);
       }
       li.classList.toggle('is-checked', cb.checked);
+
+      cb.addEventListener('change', () => {
+        li.classList.toggle('is-checked', cb.checked);
+        savedChecks[String(idx)] = cb.checked;
+        try {
+          localStorage.setItem(CHECK_KEY_PREFIX + docKey, JSON.stringify(savedChecks));
+        } catch {
+          // ignore storage quota errors
+        }
+        progressUpdaters.get(cb.closest('ul'))?.();
+      });
     });
 
     const taskLists = new Set(allInputs.map((cb) => cb.closest('ul')).filter(Boolean));
@@ -1700,28 +1729,11 @@
         fill.style.width = `${pct}%`;
       };
 
+      progressUpdaters.set(ul, updateProgress);
       updateProgress();
       ul.parentNode.insertBefore(wrap, ul);
       wrap.appendChild(prog);
       wrap.appendChild(ul);
-
-      for (const li of directItems) {
-        const cb = li.querySelector(':scope > input[type="checkbox"]');
-        if (!cb) continue;
-        cb.addEventListener('change', () => {
-          li.classList.toggle('is-checked', cb.checked);
-          const globalIdx = allInputs.indexOf(cb);
-          if (globalIdx >= 0) {
-            savedChecks[String(globalIdx)] = cb.checked;
-            try {
-              localStorage.setItem(CHECK_KEY_PREFIX + docKey, JSON.stringify(savedChecks));
-            } catch {
-              // ignore storage quota errors
-            }
-          }
-          updateProgress();
-        });
-      }
     }
   }
 
@@ -2496,10 +2508,14 @@
 
   function renderDocument({ title, badge, content, docKey, preserveScroll = false }) {
     const scrollY = preserveScroll ? window.scrollY : 0;
+    const nextDocKey = docKey || title;
+    if (state.currentDocKey && state.currentDocKey !== nextDocKey && !state.editing) {
+      saveScrollPos(state.currentDocKey);
+    }
     if (state.editing) exitEditMode();
     clearFindHighlights();
     emptyState.classList.add('hidden');
-    state.currentDocKey = docKey || title;
+    state.currentDocKey = nextDocKey;
 
     const { meta, body } = extractFrontmatter(content);
     renderFrontmatterCard(meta);
@@ -2531,7 +2547,8 @@
     state.renderedContent = content;
     state.renderedTitle = title;
     state.renderedBadge = badge;
-    window.scrollTo(0, scrollY);
+    const targetY = preserveScroll ? scrollY : loadScrollPos(state.currentDocKey);
+    window.scrollTo(0, targetY);
     updateScrollUi();
   }
 
