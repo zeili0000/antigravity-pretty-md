@@ -678,7 +678,7 @@
   }
 
   function saveScrollPos(docKey) {
-    if (!docKey || state.editing) return;
+    if (!docKey || state.editing || document.hidden || window.innerHeight === 0) return;
     try {
       localStorage.setItem(SCROLL_KEY_PREFIX + docKey, String(Math.round(window.scrollY)));
     } catch {
@@ -690,6 +690,17 @@
     if (!docKey) return 0;
     const y = Number(localStorage.getItem(SCROLL_KEY_PREFIX + docKey));
     return Number.isFinite(y) && y > 0 ? y : 0;
+  }
+
+  function restoreScrollIfNeeded() {
+    if (!state.currentDocKey || state.editing || document.hidden || window.innerHeight === 0) return;
+    if (window.scrollY < 5) {
+      const y = loadScrollPos(state.currentDocKey);
+      if (y > 0) {
+        window.scrollTo(0, y);
+        updateScrollUi();
+      }
+    }
   }
 
   function updateScrollUi() {
@@ -728,6 +739,11 @@
     },
     { passive: true }
   );
+
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) requestAnimationFrame(restoreScrollIfNeeded);
+  });
+  window.addEventListener('focus', () => requestAnimationFrame(restoreScrollIfNeeded));
 
   // ---------- YAML Frontmatter ----------
   function extractFrontmatter(source) {
