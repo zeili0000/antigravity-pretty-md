@@ -1000,10 +1000,9 @@
     return parser.parse(mdText);
   }
 
-  function sanitizeHtml(html) {
+  function sanitizeHtmlToString(html) {
     if (window.DOMPurify?.sanitize) {
-      return window.DOMPurify.sanitize(html, {
-        RETURN_DOM_FRAGMENT: true,
+      return window.DOMPurify.sanitize(String(html || ''), {
         FORBID_TAGS: ['style', 'form', 'textarea', 'select', 'script', 'iframe', 'object', 'embed'],
         FORBID_ATTR: ['style'],
         ADD_ATTR: ['data-latex', 'data-wikilink', 'target'],
@@ -1011,8 +1010,52 @@
       });
     }
     const tpl = document.createElement('template');
-    tpl.textContent = String(html || '');
+    tpl.innerHTML = String(html || '');
+    const blocked = tpl.content.querySelectorAll('script, iframe, object, embed, link, style, meta, base, form, textarea, select');
+    blocked.forEach((el) => el.remove());
+    const walker = document.createTreeWalker(tpl.content, NodeFilter.SHOW_ELEMENT);
+    let node;
+    while ((node = walker.nextNode())) {
+      for (const attr of [...node.attributes]) {
+        const name = attr.name.toLowerCase();
+        const cleaned = attr.value.replace(/[\u0000-\u0020]+/g, '').toLowerCase();
+        if (name.startsWith('on') || name === 'style') {
+          node.removeAttribute(attr.name);
+        } else if (
+          (name === 'href' || name === 'src' || name === 'xlink:href' || name === 'formaction' || name === 'action') &&
+          (cleaned.startsWith('javascript:') || cleaned.startsWith('vbscript:') || cleaned.startsWith('data:text/html'))
+        ) {
+          node.removeAttribute(attr.name);
+        }
+      }
+    }
+    return tpl.innerHTML;
+  }
+
+  function injectMathPlaceholders(safeHtml, mathItems) {
+    let out = safeHtml.replace(/<p>\s*@@PRETTYMD_MATHBLOCK_(\d+)@@\s*<\/p>/g, (m, i) => {
+      const item = mathItems[Number(i)];
+      return item ? renderMathWrapper(item.expr, true) : m;
+    });
+    out = out.replace(/@@PRETTYMD_MATHBLOCK_(\d+)@@/g, (m, i) => {
+      const item = mathItems[Number(i)];
+      return item ? renderMathWrapper(item.expr, true) : m;
+    });
+    out = out.replace(/@@PRETTYMD_MATHINLINE_(\d+)@@/g, (m, i) => {
+      const item = mathItems[Number(i)];
+      return item ? renderMathWrapper(item.expr, false) : m;
+    });
+    return out;
+  }
+
+  function htmlToFragment(html) {
+    const tpl = document.createElement('template');
+    tpl.innerHTML = html;
     return tpl.content;
+  }
+
+  function sanitizeHtml(html) {
+    return htmlToFragment(sanitizeHtmlToString(html));
   }
 
   const CALLOUT_ICONS = {
@@ -1044,20 +1087,8 @@
 
   function renderRichFragment(rawMd) {
     const { text, mathItems } = preprocessMarkdown(String(rawMd || '').trim());
-    let html = parseMarkdown(text);
-    html = html.replace(/<p>\s*@@PRETTYMD_MATHBLOCK_(\d+)@@\s*<\/p>/g, (_, i) => {
-      const item = mathItems[Number(i)];
-      return renderMathWrapper(item.expr, true);
-    });
-    html = html.replace(/@@PRETTYMD_MATHBLOCK_(\d+)@@/g, (_, i) => {
-      const item = mathItems[Number(i)];
-      return renderMathWrapper(item.expr, true);
-    });
-    html = html.replace(/@@PRETTYMD_MATHINLINE_(\d+)@@/g, (_, i) => {
-      const item = mathItems[Number(i)];
-      return renderMathWrapper(item.expr, false);
-    });
-    return sanitizeHtml(html);
+    const safeHtml = sanitizeHtmlToString(parseMarkdown(text));
+    return htmlToFragment(injectMathPlaceholders(safeHtml, mathItems));
   }
 
   function splitLiAtDoubleColon(li) {
@@ -1212,10 +1243,10 @@
     function fillContent(container, card, side) {
       container.innerHTML = '';
       if (side === 'front') {
-        if (card.frontHtml) container.appendChild(sanitizeHtml(card.frontHtml));
+        if (card.frontHtml) container.appendChild(htmlToFragment(card.frontHtml));
         else container.appendChild(renderRichFragment(card.frontMd));
       } else {
-        if (card.backHtml) container.appendChild(sanitizeHtml(card.backHtml));
+        if (card.backHtml) container.appendChild(htmlToFragment(card.backHtml));
         else container.appendChild(renderRichFragment(card.backMd));
       }
     }
@@ -1858,8 +1889,7 @@
     for (const fn of footnotes) {
       const li = document.createElement('li');
       li.id = `fn-${fn.id}`;
-      const bodyHtml = parseMarkdown(fn.raw);
-      li.appendChild(sanitizeHtml(bodyHtml));
+      li.appendChild(renderRichFragment(fn.raw));
       const targetP = li.lastElementChild?.tagName === 'P' ? li.lastElementChild : li;
       if (fn.refs.length) {
         const back = document.createElement('a');
@@ -2480,22 +2510,8 @@
     metaStats.textContent = computeReadingStats(body);
 
     const { text: protectedMd, mathItems, footnotes } = preprocessMarkdown(body);
-    let html = parseMarkdown(protectedMd);
-
-    html = html.replace(/<p>\s*@@PRETTYMD_MATHBLOCK_(\d+)@@\s*<\/p>/g, (_, i) => {
-      const item = mathItems[Number(i)];
-      return renderMathWrapper(item.expr, true);
-    });
-    html = html.replace(/@@PRETTYMD_MATHBLOCK_(\d+)@@/g, (_, i) => {
-      const item = mathItems[Number(i)];
-      return renderMathWrapper(item.expr, true);
-    });
-    html = html.replace(/@@PRETTYMD_MATHINLINE_(\d+)@@/g, (_, i) => {
-      const item = mathItems[Number(i)];
-      return renderMathWrapper(item.expr, false);
-    });
-
-    const fragment = sanitizeHtml(html);
+    const safeHtml = sanitizeHtmlToString(parseMarkdown(protectedMd));
+    const fragment = htmlToFragment(injectMathPlaceholders(safeHtml, mathItems));
     docEl.innerHTML = '';
     docEl.appendChild(fragment);
 
