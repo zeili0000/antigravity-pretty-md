@@ -1,0 +1,6 @@
+sidecars/md_reader/node_modules/
+user-settings.json
+themes/*.css
+!themes/_template.css.example
+.DS_Store
+Thumbs.db

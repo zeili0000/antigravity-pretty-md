@@ -1,0 +1,21 @@
+{
+  "command": "node",
+  "args": ["main.mjs"],
+  "restart_policy": "always",
+  "display_name": "Pretty Markdown",
+  "description": "Editorial Markdown reader & cross-chat doc library with Ctrl+K search, cross-Markdown wikilinks (Alt+Left/Right), collapsible chapters, KaTeX, Mermaid, Vega-Lite plots, flashcards/quizzes, raw edit mode, and PDF/archive export (v3.1).",
+  "has_web_ui": true,
+  "agent_permissions": {
+    "allows_user_interactions": false
+  },
+  "ui_config": {
+    "display_name": "Pretty Markdown",
+    "views": [
+      {
+        "path": "/",
+        "entrypoint": "SIDECAR_UI_ENTRYPOINT_AUX_PANE",
+        "title": "Pretty Markdown"
+      }
+    ]
+  }
+}

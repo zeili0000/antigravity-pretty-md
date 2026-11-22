@@ -1,0 +1,12 @@
+{
+  "name": "pretty-md",
+  "displayName": "Pretty Markdown",
+  "description": "Editorial Markdown reader & cross-chat doc library in Antigravity's Side Panel: Ctrl+K search, cross-Markdown wikilinks (Alt+Left/Right), collapsible chapters, KaTeX, Mermaid, Vega-Lite plots, flashcards/quizzes, quick source edit, and custom .css themes.",
+  "version": "3.1.0",
+  "logo": "assets/logo.svg",
+  "suggestedPrompts": [
+    "Open the Pretty Markdown reader in the side panel",
+    "Explain this concept in depth as a structured Markdown artifact with diagrams or plots",
+    "Browse all past Markdown artifacts in Pretty Markdown (Ctrl+K)"
+  ]
+}

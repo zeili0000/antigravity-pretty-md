@@ -1,0 +1,64 @@
+/*
+ * Pretty Markdown — Custom Theme Template
+ *
+ * 1. Copy this file to `themes/my-theme.css` (or use "+ Add .css" in Settings).
+ * 2. Replace `my-theme` in the selector below with your filename (without `.css`).
+ * 3. Reload Pretty Markdown and pick your theme in Settings.
+ */
+
+html[data-reader-theme="my-theme"] {
+  /* Core surfaces & text */
+  --pm-bg: #1e2024;
+  --pm-surface: #26292f;
+  --pm-surface-alt: #2f333b;
+  --pm-toolbar-bg: rgba(30, 32, 36, 0.92);
+  --pm-fg: #e6e8ec;
+  --pm-fg-muted: #9aa2b1;
+
+  /* Accents & headings */
+  --pm-accent: #e09f3e;
+  --pm-accent-soft: rgba(224, 159, 62, 0.16);
+  --pm-h1: #f5f7fa;
+  --pm-h1-rule: #e09f3e;
+  --pm-h2: #e6e8ec;
+  --pm-h2-bar: #e09f3e;
+  --pm-h3: #8ecae6;
+  --pm-h4: #b8c0cc;
+
+  /* Borders, code, quotes, highlights, shadows */
+  --pm-border: #3a3f4a;
+  --pm-border-strong: #4e5564;
+  --pm-code-bg: #17191c;
+  --pm-code-header-bg: #24272d;
+  --pm-code-fg: #e6e8ec;
+  --pm-quote-bg: rgba(38, 41, 47, 0.85);
+  --pm-mark-bg: rgba(224, 159, 62, 0.28);
+  --pm-mark-fg: #f7d688;
+  --pm-shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --pm-shadow-md: 0 14px 36px rgba(0, 0, 0, 0.55);
+
+  /* Syntax highlighting tokens */
+  --pm-hl-comment: #7f8794;
+  --pm-hl-keyword: #f28482;
+  --pm-hl-string: #95d5b2;
+  --pm-hl-number: #f6bd60;
+  --pm-hl-title: #8ecae6;
+  --pm-hl-attr: #f5cac3;
+  --pm-hl-meta: #cdb4db;
+
+  /* Callout accents */
+  --pm-c-note: #72a8d8;
+  --pm-c-note-bg: rgba(114, 168, 216, 0.12);
+  --pm-c-tip: #7bc994;
+  --pm-c-tip-bg: rgba(123, 201, 148, 0.12);
+  --pm-c-important: #c39bd3;
+  --pm-c-important-bg: rgba(195, 155, 211, 0.12);
+  --pm-c-warning: #e6b05c;
+  --pm-c-warning-bg: rgba(230, 176, 92, 0.13);
+  --pm-c-caution: #e57373;
+  --pm-c-caution-bg: rgba(229, 115, 115, 0.13);
+  --pm-c-example: #6ec6be;
+  --pm-c-example-bg: rgba(110, 198, 190, 0.12);
+  --pm-c-question: #e0b862;
+  --pm-c-question-bg: rgba(224, 184, 98, 0.12);
+}

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en" data-reader-theme="ochre" data-font="serif" data-width="normal">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none';">
+  <title>Pretty Markdown</title>
+  <script src="/preload.js"></script>
+  <link rel="stylesheet" href="/vendor/katex/katex.min.css">
+  <link rel="stylesheet" href="/vendor/catppuccin.css">
+  <link rel="stylesheet" href="/styles.css">
+  <style id="custom-theme-style"></style>
+</head>
+<body>
+  <div id="app" class="app">
+    <div id="read-progress" class="read-progress" aria-hidden="true"></div>
+    <div id="topbar-trigger" class="topbar-trigger" aria-hidden="true"></div>
+    <div id="topbar-shell" class="topbar-shell">
+      <header class="topbar">
+        <div class="topbar-file">
+          <div class="select-wrap">
+            <select id="file-select" class="select" aria-label="Select Markdown file">
+              <option value="">Loading Markdown files…</option>
+            </select>
+            <svg class="select-caret" width="13" height="13" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M4.5 6.5L8 10l3.5-3.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="topbar-controls">
+          <button id="toc-btn" type="button" class="btn btn-icon" aria-expanded="false" aria-controls="toc-drawer" title="Outline" aria-label="Outline">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M3 4h10M3 8h7M3 12h8.5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+          </button>
+
+          <button id="settings-btn" type="button" class="btn btn-icon" aria-expanded="false" aria-controls="settings-popover" title="Settings" aria-label="Settings">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <circle cx="8" cy="8" r="2.2" stroke="currentColor" stroke-width="1.4"/>
+              <path d="M8 2.2v1.3M8 12.5v1.3M2.2 8h1.3M12.5 8h1.3M3.9 3.9l.95.95M11.15 11.15l.95.95M12.1 3.9l-.95.95M4.85 11.15l-.95.95" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+            </svg>
+          </button>
+        </div>
+      </header>
+    </div>
+
+    <input id="file-input" type="file" accept=".md,.markdown,.txt" hidden>
+    <input id="theme-file-input" type="file" accept=".css,text/css" hidden>
+
+    <aside id="settings-popover" class="settings-popover hidden" aria-label="Reader settings">
+      <div class="settings-section">
+        <div class="settings-label-row">
+          <span class="settings-label">Theme</span>
+          <button id="add-theme-btn" type="button" class="link-mini">+ Add .css</button>
+        </div>
+        <div id="theme-swatches" class="theme-swatch-list"></div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-label">Typography &amp; Size</div>
+        <div class="typo-row">
+          <div class="seg-group" role="group" aria-label="Typography">
+            <button id="font-serif-btn" type="button" class="seg-btn">Serif</button>
+            <button id="font-sans-btn" type="button" class="seg-btn">Sans</button>
+          </div>
+          <div class="size-stepper" role="group" aria-label="Font size">
+            <button id="font-dec-btn" type="button" class="step-btn" title="Decrease font size">A−</button>
+            <button id="font-reset-btn" type="button" class="step-btn step-readout" title="Reset font size">100%</button>
+            <button id="font-inc-btn" type="button" class="step-btn" title="Increase font size">A+</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="settings-section">
+        <div class="settings-label">Top Bar</div>
+        <div class="seg-group" role="group" aria-label="Top Bar visibility">
+          <button id="bar-autohide-btn" type="button" class="seg-btn">Auto-hide</button>
+          <button id="bar-pinned-btn" type="button" class="seg-btn">Always show</button>
+        </div>
+      </div>
+
+      <details class="aa-submenu">
+        <summary>Layout &amp; Tools</summary>
+        <div class="aa-submenu-body">
+          <div class="settings-label">Reading Width</div>
+          <div class="seg-group" role="group" aria-label="Reading Width">
+            <button id="width-normal-btn" type="button" class="seg-btn">Normal</button>
+            <button id="width-wide-btn" type="button" class="seg-btn">Wide</button>
+          </div>
+          <button id="open-library-btn" type="button" class="btn btn-full">All Docs Library <kbd>Ctrl+K</kbd></button>
+          <button id="open-find-btn" type="button" class="btn btn-full">Find in Doc <kbd>Ctrl+F</kbd></button>
+          <button id="edit-mode-btn" type="button" class="btn btn-full">Edit / Raw Source</button>
+          <button id="open-btn" type="button" class="btn btn-full">Open local .md file…</button>
+        </div>
+      </details>
+
+      <details class="aa-submenu">
+        <summary>Export &amp; Archive</summary>
+        <div class="aa-submenu-body">
+          <button id="print-btn" type="button" class="btn btn-full">Print / Export PDF</button>
+          <button id="copy-md-btn" type="button" class="btn btn-full">Copy Clean Markdown</button>
+          <button id="archive-save-btn" type="button" class="btn btn-full">Save Copy to Folder</button>
+          <div class="archive-row">
+            <input id="archive-dir-input" type="text" class="archive-input" placeholder="Archive folder path">
+            <button id="archive-dir-save" type="button" class="btn">Set</button>
+          </div>
+        </div>
+      </details>
+
+      <div class="settings-footer">
+        <button id="help-btn" type="button" class="btn btn-full">Shortcuts &amp; Power-User Help <kbd>?</kbd></button>
+      </div>
+    </aside>
+
+    <aside id="toc-drawer" class="toc-drawer hidden" aria-label="Document outline">
+      <div class="toc-head">
+        <span>Outline</span>
+        <div class="toc-head-actions">
+          <button id="fold-all-btn" type="button" class="code-copy" title="Collapse all H2 chapters">Fold</button>
+          <button id="expand-all-btn" type="button" class="code-copy" title="Expand all H2 chapters">Expand</button>
+          <button id="toc-close" type="button" class="code-copy" aria-label="Close outline">Close</button>
+        </div>
+      </div>
+      <ul id="toc-list" class="toc-list"></ul>
+    </aside>
+
+    <div id="find-bar" class="find-bar hidden" role="search" aria-label="Find in document">
+      <input id="find-input" type="search" class="find-input" placeholder="Find in document…" autocomplete="off">
+      <span id="find-count" class="find-count">0 / 0</span>
+      <button id="find-prev" type="button" class="btn btn-icon" title="Previous match (Shift+Enter)">↑</button>
+      <button id="find-next" type="button" class="btn btn-icon" title="Next match (Enter)">↓</button>
+      <button id="find-close" type="button" class="btn btn-icon" title="Close (Esc)">✕</button>
+    </div>
+
+    <div id="drop-overlay" class="drop-overlay" aria-hidden="true">
+      <div class="drop-card">
+        <strong>Drop Markdown File</strong>
+        <span>Opens directly in Pretty Markdown</span>
+      </div>
+    </div>
+
+    <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+
+    <main id="reader" class="reader">
+      <div id="doc-meta" class="doc-meta hidden">
+        <span id="meta-badge" class="meta-badge"></span>
+        <span id="meta-name" class="meta-name"></span>
+        <span id="meta-stats" class="meta-stats"></span>
+      </div>
+
+      <section id="frontmatter-card" class="frontmatter-card hidden"></section>
+
+      <section id="empty-state" class="empty-state hidden">
+        <h2>No Markdown files yet in this view</h2>
+        <p>Ask Antigravity to write a Markdown artifact, press <kbd>Ctrl+K</kbd> to browse past docs, or drag and drop any downloaded <code>.md</code> file right onto this panel.</p>
+        <button id="empty-open-btn" type="button" class="btn btn-primary">Open local .md file</button>
+      </section>
+
+      <section id="editor-shell" class="editor-shell hidden" aria-label="Raw Markdown Editor">
+        <div class="editor-bar">
+          <span id="edit-file-label" class="editor-label">Source</span>
+          <span id="edit-status" class="editor-status"></span>
+          <div class="editor-actions">
+            <button id="edit-cancel-btn" type="button" class="btn">Back to Reader</button>
+            <button id="edit-save-btn" type="button" class="btn btn-primary">Save <kbd>Ctrl+S</kbd></button>
+          </div>
+        </div>
+        <textarea id="source-textarea" class="source-textarea" spellcheck="false"></textarea>
+      </section>
+
+      <article id="doc" class="doc"></article>
+    </main>
+
+    <div id="library-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-label="All Documents Library">
+      <div class="modal-card library-card">
+        <div class="modal-head">
+          <input id="lib-search" type="search" class="lib-search" placeholder="Search all Antigravity & workspace docs by title, tag, summary…" autocomplete="off">
+          <button id="lib-close" type="button" class="btn btn-icon" title="Close (Esc)">✕</button>
+        </div>
+        <div class="lib-filters">
+          <div class="lib-scopes" role="group" aria-label="Library scope">
+            <button type="button" class="lib-scope-btn active" data-lib-scope="all">All</button>
+            <button type="button" class="lib-scope-btn" data-lib-scope="current">This Chat</button>
+            <button type="button" class="lib-scope-btn" data-lib-scope="workspace">Workspace</button>
+          </div>
+          <div id="lib-tags" class="lib-tags"></div>
+        </div>
+        <div id="lib-list" class="lib-list"></div>
+      </div>
+    </div>
+
+    <div id="help-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-label="Power-User Guide">
+      <div class="modal-card help-card">
+        <div class="modal-head">
+          <strong class="help-title">Pretty Markdown — Power-User Reference</strong>
+          <button id="help-close" type="button" class="btn btn-icon" title="Close (Esc)">✕</button>
+        </div>
+        <div class="help-body">
+          <div class="help-grid">
+            <div>
+              <h3>Keyboard Shortcuts</h3>
+              <ul>
+                <li><kbd>Ctrl</kbd>+<kbd>K</kbd> — Open All-Docs Library</li>
+                <li><kbd>Ctrl</kbd>+<kbd>F</kbd> — Find in current document</li>
+                <li><kbd>Alt</kbd>+<kbd>←</kbd> / <kbd>Alt</kbd>+<kbd>→</kbd> — Navigate Back / Forward across links</li>
+                <li><kbd>?</kbd> — Toggle this Power-User Reference</li>
+                <li><kbd>Ctrl</kbd>+<kbd>S</kbd> — Save file in Raw/Edit mode</li>
+                <li><kbd>Esc</kbd> — Close any modal, popover, or find bar</li>
+              </ul>
+            </div>
+            <div>
+              <h3>Interactive Reader Actions</h3>
+              <ul>
+                <li><strong>Click any <code>##</code> heading</strong> → Fold / unfold that chapter</li>
+                <li><strong>Click any LaTeX formula</strong> → Copy raw TeX source</li>
+                <li><strong>Click any Mermaid / Vega-Lite graphic</strong> → Zoom modal</li>
+                <li><strong>Click checkboxes</strong> → Cross off items (saved locally)</li>
+                <li><strong>Drag &amp; drop any <code>.md</code> file</strong> → View immediately</li>
+              </ul>
+            </div>
+          </div>
+          <h3>Supported Portable Markdown Standards</h3>
+          <p class="help-note">Works with standard GFM + Obsidian syntax: YAML frontmatter (<code>title</code>, <code>summary</code>, <code>date</code>, <code>tags</code>), callouts (<code>&gt; [!NOTE]</code>, <code>&gt; [!TIP]-</code>, <code>&gt; [!THEOREM]</code>, <code>&gt; [!LEMMA]</code>, <code>&gt; [!PROOF]-</code>, <code>&gt; [!FLASHCARDS]</code>), <code>==highlights==</code>, <code>&lt;kbd&gt;</code>, footnotes <code>[^1]</code>, <code>```diff</code>, <code>```mermaid</code>, <code>```vega-lite</code>, <code>```flashcards</code>, and <code>```quiz</code>.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="mermaid-modal" class="mermaid-modal hidden" role="dialog" aria-modal="true" aria-label="Expanded Diagram">
+      <div class="mermaid-modal-bar">
+        <span id="mermaid-modal-title">Diagram</span>
+        <div class="mermaid-modal-actions">
+          <button id="mermaid-zoom-out" type="button" class="btn btn-icon" title="Zoom out">−</button>
+          <button id="mermaid-zoom-fit" type="button" class="btn" title="Reset zoom">Fit</button>
+          <button id="mermaid-zoom-in" type="button" class="btn btn-icon" title="Zoom in">+</button>
+          <button id="mermaid-modal-close" type="button" class="btn" title="Close diagram (Esc)">Close</button>
+        </div>
+      </div>
+      <div id="mermaid-modal-body" class="mermaid-modal-body">
+        <div id="mermaid-modal-inner" class="mermaid-modal-inner"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="/vendor/purify.min.js"></script>
+  <script src="/vendor/marked.umd.js"></script>
+  <script src="/vendor/katex/katex.min.js"></script>
+  <script src="/vendor/highlight.min.js"></script>
+  <script src="/vendor/mermaid.min.js"></script>
+  <script src="/vendor/js-yaml.min.js"></script>
+  <script src="/vendor/vega.min.js"></script>
+  <script src="/vendor/vega-lite.min.js"></script>
+  <script src="/vendor/vega-embed.min.js"></script>
+  <script src="/app.js"></script>
+</body>
+</html>
