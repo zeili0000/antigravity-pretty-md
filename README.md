@@ -6,7 +6,7 @@ An editorial Markdown reader, cross-conversation document library, and study-not
 
 | Ochre Paper (Default Light) | Gruvbox Dark (Built-in Dark) |
 | :---: | :---: |
-| ![Pretty Markdown — Ochre Paper](assets/preview-ochre.png) | ![Pretty Markdown — Gruvbox Dark](assets/preview-gruvbox.png) |
+| ![Pretty Markdown — Ochre Paper](assets/preview-ochre-v3.png) | ![Pretty Markdown — Gruvbox Dark](assets/preview-gruvbox-v3.png) |
 
 ## Why this exists
 
